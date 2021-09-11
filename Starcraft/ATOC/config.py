@@ -1,5 +1,4 @@
 hidden_dim = 64
-
 GAMMA = 0.99
 n_episode = 1000000
 i_episode = 0
