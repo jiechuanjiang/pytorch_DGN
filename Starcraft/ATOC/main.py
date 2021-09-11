@@ -45,7 +45,7 @@ while i_episode<n_episode:
 	env.reset()
 	terminated = False
 	obs = env.get_obs()
-	adj = env.get_visibility_matrix()[:,0:n_ant]*1 #+ np.eye(n_ant)
+	adj = env.get_visibility_matrix()[:,0:n_ant]*1
 	mask = np.array([env.get_avail_agent_actions(i) for i in range(n_ant)])
 	while not terminated:
 		test_flag += 1
