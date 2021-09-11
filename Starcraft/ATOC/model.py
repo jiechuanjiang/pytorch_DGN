@@ -29,22 +29,17 @@ class Encoder(nn.Module):
 class CommModel(nn.Module):
 	def __init__(self, n_node, din, hidden_dim, dout):
 		super(CommModel, self).__init__()
-		self.rnn_flag = True
-
-		#for Bi-LSTM
 		self.rnn=torch.nn.GRU(input_size=din,hidden_size=int(hidden_dim/2),bidirectional=True,batch_first=True)
 		self.fc = nn.Linear(hidden_dim, dout)
 		self.n_node = n_node
 		self.din = din
 	
 	def forward(self, x, mask):
-
 		size = x.shape
 		aid = torch.eye(self.n_node).cuda().unsqueeze(0).expand(size[0],-1,-1).unsqueeze(2).reshape(size[0]*self.n_node,1,self.n_node)
 		x = x.unsqueeze(1).expand(-1, self.n_node, -1, -1).reshape(size[0]*self.n_node,size[1],size[2])
 		mask = mask.reshape(size[0]*self.n_node,self.n_node).unsqueeze(-1).expand(-1,-1,self.din)
 		y = torch.bmm(aid,self.rnn(x*mask)[0]).squeeze(1).reshape(size[0],self.n_node,self.din)
-
 		return y
 
 class Q_Net(nn.Module):
