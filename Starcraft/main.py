@@ -1,19 +1,17 @@
 import os, sys  
 import numpy as np
 from smac.env import StarCraft2Env
-from DGN import DGN
+from model import DGN
 from buffer import ReplayBuffer
 from config import *
+from utilis import *
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import torch.autograd as autograd 
-import torch.nn.functional as F
-env = StarCraft2Env(map_name='8m')#'25m'
+env = StarCraft2Env(map_name='25m',range_=range_)
 env_info = env.get_env_info()
 n_ant = env_info["n_agents"]
 n_actions = env_info["n_actions"]
-obs_space = env_info["obs_shape"]
+obs_space = env_info["obs_shape"] + n_ant
 
 buff = ReplayBuffer(capacity,obs_space,n_actions,n_ant)
 model = DGN(n_ant,obs_space,hidden_dim,n_actions)
@@ -22,26 +20,28 @@ model = model.cuda()
 model_tar = model_tar.cuda()
 model_tar.load_state_dict(model.state_dict())
 optimizer = optim.RMSprop(model.parameters(), lr = 0.0005)
+comm_flag = float(sys.argv[1])
 
+f = open(sys.argv[1]+'_'+sys.argv[2]+'.txt','w')
 while i_episode<n_episode:
-
-	if i_episode > 40:
-		epsilon -= 0.005
-		if epsilon < 0.05:
-			epsilon = 0.05
-
+	if time_step > max_timestep:
+		break
+	if i_episode > 100:
+		epsilon -= 0.001
+		if epsilon < 0.02:
+			epsilon = 0.02
 	i_episode+=1
-	steps = 0
 	env.reset()
 	terminated = False
-	episode_reward = 0
-	win = 0
-	obs = env.get_obs()
-	adj = env.get_visibility_matrix()[:,0:n_ant]*1 + np.eye(n_ant)
+	obs = get_obs(env.get_obs(),n_ant)
+	adj = env.get_visibility_matrix()[:,0:n_ant]*comm_flag + np.eye(n_ant)
 	mask = np.array([env.get_avail_agent_actions(i) for i in range(n_ant)])
 	while not terminated:
+		test_flag += 1
+		time_step += 1
+
 		action=[]
-		q = model(torch.Tensor(np.array([obs])).cuda(), torch.Tensor(adj).cuda())[0]
+		q = model(torch.Tensor(np.array([obs])).cuda(), torch.Tensor(np.array([adj])).cuda())[0]
 		for i in range(n_ant):
 			if np.random.rand() < epsilon:
 				avail_actions_ind = np.nonzero(mask[i])[0]
@@ -49,28 +49,23 @@ while i_episode<n_episode:
 			else:
 				a = np.argmax(q[i].cpu().detach().numpy() - 9e15*(1 - mask[i]))
 			action.append(a)
+			
 		reward, terminated, winner = env.step(action)
-		if winner.get('battle_won') == True:
-			win = 1
-		episode_reward += reward
-		next_obs = env.get_obs()
-		next_adj = env.get_visibility_matrix()[:,0:n_ant]*1 + np.eye(n_ant)
+		next_obs = get_obs(env.get_obs(),n_ant)
+		next_adj = env.get_visibility_matrix()[:,0:n_ant]*comm_flag + np.eye(n_ant)
 		mask = np.array([env.get_avail_agent_actions(i) for i in range(n_ant)])
 		buff.add(np.array(obs),action,reward,np.array(next_obs),adj,next_adj,mask,terminated)
 		obs = next_obs
 		adj = next_adj
 
-	sum_reward += episode_reward
-	sum_win += win
-	print("Total reward in episode {} = {}".format(i_episode, episode_reward))
-	if i_episode%200 == 0:
-		print(str(i_episode)+'	'+str(sum_win/200)+'	'+str(sum_reward/200))
-		print(sum_win/200)
-		print(sum_reward/200)
-		sum_reward = 0
-		sum_win = 0
+	if test_flag > 10000:
+		log_r, log_w = test_agent(env, model, n_ant)
+		h = str(log_r)+'	'+str(log_w)
+		f.write(h+'\n')
+		f.flush()
+		test_flag = 0
 	
-	if i_episode < 40:
+	if i_episode < 100:
 		continue
 
 	for epoch in range(n_epoch):
@@ -82,7 +77,6 @@ while i_episode<n_episode:
 		target_q_values = (target_q_values - 9e15*(1 - torch.Tensor(Next_Mask).cuda())).max(dim = 2)[0]
 		target_q_values = np.array(target_q_values.cpu().data)
 		expected_q = np.array(q_values.cpu().data)
-		
 		for j in range(batch_size):
 			for i in range(n_ant):
 				expected_q[j][i][A[j][i]] = R[j] + (1-D[j])*GAMMA*target_q_values[j][i]
@@ -92,6 +86,8 @@ while i_episode<n_episode:
 		loss.backward()
 		optimizer.step()
 
-	if i_episode%5 == 0:
-		model_tar.load_state_dict(model.state_dict())
+		with torch.no_grad():
+			for p, p_targ in zip(model.parameters(), model_tar.parameters()):
+				p_targ.data.mul_(tau)
+				p_targ.data.add_((1 - tau) * p.data)
 
