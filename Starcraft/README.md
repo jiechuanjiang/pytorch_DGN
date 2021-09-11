@@ -1,5 +1,3 @@
-# Centralized_MARL_SMAC
-
 Due to the limitation of computing resource, the previous methods ATOC and DGN are tested on toy tasks. We perform the two methods on SMAC tasks and decrease the sight range (9) to make the original tasks more difficult. In 25m we set the sight range as 3 and 4, and in 10m_vs_11m, we set the  sight range as 4. In these tasks, agents could only communicate with the agents in its sight range (get_visibility_matrix() in SAMC).
 
 ## DGN
