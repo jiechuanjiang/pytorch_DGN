@@ -75,8 +75,8 @@ while i_episode<n_episode:
 		adj = next_adj
 		mask = next_mask
 	if test_flag > 10000:
-		log_r, log_w, log_cost = test_agent(env, model, att, n_ant, comm_flag, threshold)
-		h = str(log_r)+'	'+str(log_w)+'	'+str(log_cost)
+		log_r, log_w = test_agent(env, model, att, n_ant, comm_flag, threshold)
+		h = str(log_r)+'	'+str(log_w)
 		f.write(h+'\n')
 		f.flush()
 		test_flag = 0
