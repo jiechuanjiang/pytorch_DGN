@@ -12,6 +12,6 @@ sight range = 4
 
 ## ATOC
 
-ATOC achieve similar performance as full communication, but could reduce ~15% communication cost. Since agents could only communicate with the agents in its sight range, full communication would not be negatively impacted by redundant information.
+ATOC achieves similar performance as full communication, but could reduce ~15% communication cost. Since agents could only communicate with the agents in its sight range, full communication would not be negatively impacted by redundant information.
 
 <img src="./fig/ATOC-4.png" alt="sight range = 4" width="500">
