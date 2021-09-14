@@ -7,7 +7,7 @@ DGN could outperform CommNet and IQL.
 
 <img src="./fig/DGN-3.png" alt="sight range = 3" width="500">
 <center> 25m, sight range = 3 </center>
-
+<br/>
 
 <img src="./fig/DGN-4.png" alt="sight range = 4" width="500">
 <center> 25m, sight range = 4 </center>
