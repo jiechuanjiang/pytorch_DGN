@@ -4,8 +4,8 @@ Due to the limitation of computing resource, the previous methods ATOC and DGN a
 
 DGN could outperform CommNet and IQL.
 
-sight range = 3
 <img src="./fig/DGN-3.png" alt="sight range = 3" width="500">
+<center>sight range = 3</center>
 
 sight range = 4
 <img src="./fig/DGN-4.png" alt="sight range = 4" width="500">
