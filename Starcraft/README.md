@@ -20,3 +20,8 @@ ATOC achieves similar performance as full communication, but could reduce ~15% c
 
 <img src="./fig/ATOC-4.png" alt="sight range = 4" width="500">
 <center> 10m_vs_11m, sight range = 4 </center>
+
+'''
+
+<img src="./fig/ATOC-5.png" alt="sight range = 5" width="500">
+<center> 25m, sight range = 5</center>
