@@ -6,13 +6,15 @@ DGN could outperform CommNet and IQL.
 
 
 <img src="./fig/DGN-3.png" alt="sight range = 3" width="500">
-<center> sight range = 3 </center>
+<center> 25m, sight range = 3 </center>
+
 
 <img src="./fig/DGN-4.png" alt="sight range = 4" width="500">
-<center> sight range = 4 </center>
+<center> 25m, sight range = 4 </center>
 
 ## ATOC
 
 ATOC achieves similar performance as full communication, but could reduce ~15% communication cost. Since agents could only communicate with the agents in its sight range, full communication would not be negatively impacted by redundant information.
 
 <img src="./fig/ATOC-4.png" alt="sight range = 4" width="500">
+<center> 10m_vs_11m, sight range = 4 </center>
