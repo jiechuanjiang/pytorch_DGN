@@ -1,7 +1,7 @@
 import os, sys  
 import numpy as np
 from smac.env import StarCraft2Env
-from model import ATOC, ATT
+from ATOC import ATOC, ATT
 from buffer import ReplayBuffer
 from config import *
 from utilis import *
@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim 
 threshold = float(sys.argv[1])
-env = StarCraft2Env(map_name='10m_vs_11m',range_=4.0)
+env = StarCraft2Env(map_name='10m_vs_11m',range_=4.0)#4.0
 env_info = env.get_env_info()
 n_ant = env_info["n_agents"]
 n_actions = env_info["n_actions"]
@@ -28,7 +28,6 @@ att_tar.load_state_dict(att.state_dict())
 optimizer_att = optim.RMSprop(att.parameters(), lr = 0.0005)
 criterion = nn.BCELoss()
 
-M_ALL = torch.Tensor(np.ones((batch_size,n_ant,n_ant))).cuda()
 M_Null = torch.Tensor(np.array([np.eye(n_ant)]*batch_size)).cuda()
 M_ZERO = torch.Tensor(np.zeros((batch_size,n_ant,n_ant))).cuda()
 
@@ -45,7 +44,7 @@ while i_episode<n_episode:
 	env.reset()
 	terminated = False
 	obs = env.get_obs()
-	adj = env.get_visibility_matrix()[:,0:n_ant]*1
+	adj = env.get_visibility_matrix()[:,0:n_ant]*1 #+ np.eye(n_ant)
 	mask = np.array([env.get_avail_agent_actions(i) for i in range(n_ant)])
 	while not terminated:
 		test_flag += 1
@@ -75,8 +74,8 @@ while i_episode<n_episode:
 		adj = next_adj
 		mask = next_mask
 	if test_flag > 10000:
-		log_r, log_w = test_agent(env, model, att, n_ant, comm_flag, threshold)
-		h = str(log_r)+'	'+str(log_w)
+		log_r, log_w, log_cost = test_agent(env, model, att, n_ant, comm_flag, threshold)
+		h = str(log_r)+'	'+str(log_w)+'	'+str(log_cost)
 		f.write(h+'\n')
 		f.flush()
 		test_flag = 0
@@ -88,28 +87,32 @@ while i_episode<n_episode:
 		
 		O,A,R,Next_O,Matrix,Next_Matrix,Next_Mask,D,Mask = buff.getBatch(batch_size)
 		O = torch.Tensor(O).cuda()
+		Matrix = torch.Tensor(Matrix).cuda()
 		Next_O = torch.Tensor(Next_O).cuda()
 		Next_Matrix = torch.Tensor(Next_Matrix).cuda()
-
 		Mask = torch.Tensor(Mask).cuda()
-		label = (model(O, M_ALL) - 9e15*(1 - Mask)).max(dim = 2)[0] - (model(O, M_Null) - 9e15*(1 - Mask)).max(dim = 2)[0]
-		mu = label.mean().data
-		std = label.std().data
-		label = torch.clamp(label, mu-std, mu+std)
+		Next_Mask = torch.Tensor(Next_Mask).cuda()
+		
+		label = (model(Next_O, Next_Matrix+M_Null) - 9e15*(1 - Next_Mask)).max(dim = 2)[0] - (model(Next_O, M_Null) - 9e15*(1 - Next_Mask)).max(dim = 2)[0]
+		##optional
+		#mu = label.mean().data
+		#std = label.std().data
+		#label = torch.clamp(label, mu-std, mu+std)
 		label = (label - label.mean())/(label.std()+0.000001) + 0.5
 		label = torch.clamp(label, 0, 1).unsqueeze(-1).detach()
-		loss = criterion(att(O), label)
+		loss = criterion(att(Next_O), label)
 		optimizer_att.zero_grad()
 		loss.backward()
 		optimizer_att.step()
 
-		V_A_D = att_tar(Next_O).expand(-1,-1,n_ant)
-		Next_Matrix = torch.where(V_A_D > threshold, Next_Matrix, M_ZERO)
+		#optional
+		#V_A_D = att_tar(Next_O).expand(-1,-1,n_ant)
+		#Next_Matrix = torch.where(V_A_D > threshold, Next_Matrix, M_ZERO)
 		Next_Matrix = Next_Matrix*comm_flag + M_Null
 
-		q_values = model(O, torch.Tensor(Matrix).cuda())
+		q_values = model(O, Matrix)
 		target_q_values = model_tar(Next_O, Next_Matrix)
-		target_q_values = (target_q_values - 9e15*(1 - torch.Tensor(Next_Mask).cuda())).max(dim = 2)[0]
+		target_q_values = (target_q_values - 9e15*(1 - Next_Mask)).max(dim = 2)[0]
 		target_q_values = np.array(target_q_values.cpu().data)
 		expected_q = np.array(q_values.cpu().data)
 		
