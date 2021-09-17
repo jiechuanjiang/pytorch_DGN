@@ -11,6 +11,6 @@ Mean kernel averages the messages as the communication channel. DGN outperforms 
 ## Results about DGN+ATOC
 
 
-<img src=".ATOC.png" alt="ATOC" width="500">
+<img src="./ATOC.png" alt="ATOC" width="500">
 
 ATOC could reduce the communication cost. When pruning 20% communication, the performance does not drop. When pruning 50% communication, the performance slightly drops. 
