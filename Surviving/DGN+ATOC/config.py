@@ -1,0 +1,15 @@
+hidden_dim = 64
+max_step = 500
+GAMMA = 0.99
+n_episode = 800
+i_episode = 0
+capacity = 65000 
+batch_size = 64
+n_epoch = 25
+epsilon = 0.9
+score = 0
+comm_flag = 1
+threshold = -0.1
+tau = 0.98
+cost_all = 0
+cost_comm = 0
