@@ -10,7 +10,11 @@ Mean kernel averages the messages as the communication channel. DGN outperforms 
 
 ## Results about DGN+ATOC
 
+obs_range = 1
+<img src="./range_1.png" alt="ATOC1" width="500">
 
-<img src="./ATOC.png" alt="ATOC" width="500">
+obs_range = 2
+<img src="./range_2.png" alt="ATOC2" width="500">
 
-ATOC could reduce the communication cost. When pruning 20% communication, the performance does not drop. When pruning 50% communication, the performance slightly drops. 
+
+ATOC could reduce the communication cost. When pruning the same communication, ATOC outperforms randomly pruning. If the obs_range becomes large (2), some communication is not necessary, thus pruning 20% ~ 40% communication, the performance increases.
